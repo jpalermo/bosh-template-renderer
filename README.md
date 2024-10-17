@@ -4,6 +4,12 @@ Bosh Template Renderer is intended to be the default template rendering library 
 
 The main goals are a stable grammar and fast rendering time.
 
+# Development Usage
+
+```bash
+echo '{"variable": {"subvariable": {"complex": "thing"}}}' | go run . examples/example.btl
+```
+
 # Questions
 
 ---

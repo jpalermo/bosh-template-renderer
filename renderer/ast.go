@@ -59,7 +59,7 @@ type InterpolationSegment struct {
 }
 
 func (segment InterpolationSegment) ToString(data *gabs.Container) (string, error) {
-	currentData := data.Path(segment.InterpolationString)
+	currentData := data.Search("properties").Path(segment.InterpolationString)
 	if currentData == nil {
 		return "", errors.New(fmt.Sprintf("p.%s did not match any provided properties", segment.InterpolationString))
 	}

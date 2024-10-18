@@ -23,35 +23,35 @@ line3 `
 	Describe("interpolating", func() {
 		It("string values", func() {
 			text := `{{p.key}}`
-			data, _ := gabs.ParseJSON([]byte(`{"key": "value"}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"key": "value"}}`))
 			template, _ := renderer.Parse(strings.NewReader(text))
 			Expect(template.Render(data)).To(Equal("value"))
 		})
 
 		It("number values", func() {
 			text := `{{p.integer}} {{p.floating}}`
-			data, _ := gabs.ParseJSON([]byte(`{"integer": 5, "floating": 3.14}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"integer": 5, "floating": 3.14}}`))
 			template, _ := renderer.Parse(strings.NewReader(text))
 			Expect(template.Render(data)).To(Equal("5 3.14"))
 		})
 
 		It("array values", func() {
 			text := `{{p.data}}`
-			data, _ := gabs.ParseJSON([]byte(`{"data": [1, "2"]}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"data": [1, "2"]}}`))
 			template, _ := renderer.Parse(strings.NewReader(text))
 			Expect(template.Render(data)).To(Equal(`[1,"2"]`))
 		})
 
 		It("object values", func() {
 			text := `{{p.data}}`
-			data, _ := gabs.ParseJSON([]byte(`{"data": {"nested": [1, "2"]}}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"data": {"nested": [1, "2"]}}}`))
 			template, _ := renderer.Parse(strings.NewReader(text))
 			Expect(template.Render(data)).To(Equal(`{"nested":[1,"2"]}`))
 		})
 
 		It("nested searching", func() {
 			text := `{{p.one.two.three}}`
-			data, _ := gabs.ParseJSON([]byte(`{"one": {"two": {"three": 3}}}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"one": {"two": {"three": 3}}}}`))
 			template, err := renderer.Parse(strings.NewReader(text))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(template.Render(data)).To(Equal("3"))
@@ -59,7 +59,7 @@ line3 `
 
 		It("errors when the property does not exist", func() {
 			text := `{{p.nope.not-there}}`
-			data, _ := gabs.ParseJSON([]byte(`{"one": 1}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"one": 1}}`))
 			template, err := renderer.Parse(strings.NewReader(text))
 			Expect(err).ToNot(HaveOccurred())
 			_, err = template.Render(data)
@@ -69,7 +69,7 @@ line3 `
 
 		It("does not interpolate single braces", func() {
 			text := `{p.one}}`
-			data, _ := gabs.ParseJSON([]byte(`{"one": 1}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"one": 1}}`))
 			template, err := renderer.Parse(strings.NewReader(text))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(template.Render(data)).To(Equal("{p.one}}"))
@@ -77,7 +77,7 @@ line3 `
 
 		It("braces can be escaped", func() {
 			text := `\{{p.one}}`
-			data, _ := gabs.ParseJSON([]byte(`{"one": 1}`))
+			data, _ := gabs.ParseJSON([]byte(`{"properties": {"one": 1}}`))
 			template, err := renderer.Parse(strings.NewReader(text))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(template.Render(data)).To(Equal("{{p.one}}"))

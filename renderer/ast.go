@@ -19,18 +19,23 @@ var (
 		},
 		"Interpolation": {
 			{`InterpolationEnd`, `}`, lexer.Pop()},
-			{`VariableLookup`, `p\.`, lexer.Push("VariableLookup")},
+			{`PropertyLookup`, `p\.`, lexer.Push("PropertyLookup")},
+			{`SpecLookup`, `spec\.`, lexer.Push("SpecLookup")},
 		},
-		"VariableLookup": {
+		"PropertyLookup": {
 			{`InterpolationEnd`, `}`, lexer.Pop()},
-			{`LookupIdentifier`, `[^}]+`, nil},
+			{`PropertyLookupIdentifier`, `[^}]+`, nil},
+		},
+		"SpecLookup": {
+			{`InterpolationEnd`, `}`, lexer.Pop()},
+			{`SpecLookupIdentifier`, `[^}]+`, nil},
 		},
 	})
 
 	templateParser = participle.MustBuild[Template](
 		participle.Lexer(templateLexer),
-		participle.Union[Segment](StringSegment{}, InterpolationSegment{}, SingleBraceSegment{}, WhitespaceSegment{}),
-		participle.Elide("InterpolationStart", "InterpolationEnd", "VariableLookup"),
+		participle.Union[Segment](StringSegment{}, PropertyInterpolationSegment{}, SpecInterpolationSegment{}, SingleBraceSegment{}, WhitespaceSegment{}),
+		participle.Elide("InterpolationStart", "InterpolationEnd", "PropertyLookup", "SpecLookup"),
 	)
 )
 
@@ -54,14 +59,31 @@ func (segment WhitespaceSegment) ToString(*gabs.Container) (string, error) {
 	return segment.Body, nil
 }
 
-type InterpolationSegment struct {
-	InterpolationString string `@LookupIdentifier`
+type PropertyInterpolationSegment struct {
+	InterpolationString string `@PropertyLookupIdentifier`
 }
 
-func (segment InterpolationSegment) ToString(data *gabs.Container) (string, error) {
+func (segment PropertyInterpolationSegment) ToString(data *gabs.Container) (string, error) {
 	currentData := data.Search("properties").Path(segment.InterpolationString)
 	if currentData == nil {
 		return "", errors.New(fmt.Sprintf("p.%s did not match any provided properties", segment.InterpolationString))
+	}
+	rawData := currentData.Data()
+	formatted, ok := rawData.(string)
+	if ok {
+		return formatted, nil
+	}
+	return currentData.String(), nil
+}
+
+type SpecInterpolationSegment struct {
+	InterpolationString string `@SpecLookupIdentifier`
+}
+
+func (segment SpecInterpolationSegment) ToString(data *gabs.Container) (string, error) {
+	currentData := data.Search("spec").Path(segment.InterpolationString)
+	if currentData == nil {
+		return "", errors.New(fmt.Sprintf("spec.%s did not match any provided properties", segment.InterpolationString))
 	}
 	rawData := currentData.Data()
 	formatted, ok := rawData.(string)

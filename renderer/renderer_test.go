@@ -105,5 +105,26 @@ line3 `
 			})
 
 		})
+
+		Context("links", func() {
+			It("link values", func() {
+				text := `{{link.link_name.deployment_name}}`
+				data, _ := gabs.ParseJSON([]byte(`{"link": {"link_name": {"deployment_name": "deployment 1"}}}`))
+				template, err := renderer.Parse(strings.NewReader(text))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(template.Render(data)).To(Equal("deployment 1"))
+			})
+
+			It("errors when the property does not exist", func() {
+				text := `{{link.not_a_link_name.deployment}}`
+				data, _ := gabs.ParseJSON([]byte(`{"link": {}}`))
+				template, err := renderer.Parse(strings.NewReader(text))
+				Expect(err).ToNot(HaveOccurred())
+				_, err = template.Render(data)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError("link.not_a_link_name.deployment did not match any provided properties"))
+			})
+
+		})
 	})
 })

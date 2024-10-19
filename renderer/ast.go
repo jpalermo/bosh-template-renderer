@@ -21,6 +21,7 @@ var (
 			{`InterpolationEnd`, `}`, lexer.Pop()},
 			{`PropertyLookup`, `p\.`, lexer.Push("PropertyLookup")},
 			{`SpecLookup`, `spec\.`, lexer.Push("SpecLookup")},
+			{`LinkLookup`, `link\.`, lexer.Push("LinkLookup")},
 		},
 		"PropertyLookup": {
 			{`InterpolationEnd`, `}`, lexer.Pop()},
@@ -30,12 +31,16 @@ var (
 			{`InterpolationEnd`, `}`, lexer.Pop()},
 			{`SpecLookupIdentifier`, `[^}]+`, nil},
 		},
+		"LinkLookup": {
+			{`InterpolationEnd`, `}`, lexer.Pop()},
+			{`LinkLookupIdentifier`, `[^}]+`, nil},
+		},
 	})
 
 	templateParser = participle.MustBuild[Template](
 		participle.Lexer(templateLexer),
-		participle.Union[Segment](StringSegment{}, PropertyInterpolationSegment{}, SpecInterpolationSegment{}, SingleBraceSegment{}, WhitespaceSegment{}),
-		participle.Elide("InterpolationStart", "InterpolationEnd", "PropertyLookup", "SpecLookup"),
+		participle.Union[Segment](StringSegment{}, PropertyInterpolationSegment{}, SpecInterpolationSegment{}, LinkInterpolationSegment{}, SingleBraceSegment{}, WhitespaceSegment{}),
+		participle.Elide("InterpolationStart", "InterpolationEnd", "PropertyLookup", "SpecLookup", "LinkLookup"),
 	)
 )
 
@@ -84,6 +89,23 @@ func (segment SpecInterpolationSegment) ToString(data *gabs.Container) (string, 
 	currentData := data.Search("spec").Path(segment.InterpolationString)
 	if currentData == nil {
 		return "", errors.New(fmt.Sprintf("spec.%s did not match any provided properties", segment.InterpolationString))
+	}
+	rawData := currentData.Data()
+	formatted, ok := rawData.(string)
+	if ok {
+		return formatted, nil
+	}
+	return currentData.String(), nil
+}
+
+type LinkInterpolationSegment struct {
+	InterpolationString string `@LinkLookupIdentifier`
+}
+
+func (segment LinkInterpolationSegment) ToString(data *gabs.Container) (string, error) {
+	currentData := data.Search("link").Path(segment.InterpolationString)
+	if currentData == nil {
+		return "", errors.New(fmt.Sprintf("link.%s did not match any provided properties", segment.InterpolationString))
 	}
 	rawData := currentData.Data()
 	formatted, ok := rawData.(string)

@@ -26,5 +26,9 @@ func main() {
 	if err != nil {
 		panic("unable to parse property data")
 	}
-	fmt.Println(template.Render(jsonData))
+	renderOutput, err := template.Render(jsonData)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(renderOutput)
 }
